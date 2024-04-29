@@ -1,0 +1,29 @@
+body {
+  background-color: #c9cccd;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+h1.display-4 {
+  font-size: 3em;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  font-size: 16px;
+  transition-duration: 0.4s;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  color: white;
+}
+
+.text-width {
+  max-width: 600px;
+}
+
+.form-control {
+  margin-bottom: 15px;
+}

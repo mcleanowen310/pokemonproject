@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Single Card</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/singlecard.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="/">Pokémon Central</a>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/collectionlist">Collection</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/userinfo">User Info</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viewsets">Cards</a>
+        </li>
+      </ul>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          <% if (user) { %>
+          <li class="nav-item">
+            <span class="navbar-text mr-2">
+              Signed in as : <%= user.first_name %> <%= user.last_name %>
+            </span>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-primary" onclick="logout()">Log Out</button>
+          </li>
+          <% } else { %>
+          <li class="nav-item">
+            <a class="btn btn-primary" href="/login">Log In</a>
+          </li>
+          <% } %>
+          <li class="nav-item">
+            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h2 class="mt-4 mb-4"><%= titletext %></h2>
+
+  
+        <div class="card mb-4">
+          <div class="row no-gutters">
+            <div class="col-md-4">
+              <img class="card-img" src="<%= cardData.img %>" alt="<%= cardData.name %>" />
+              <div class="center-button">
+                <% if (user && user.id) { %>
+                  <button id="add-to-collection">Add to Collection</button>
+                <% } else { %>
+                  <a href="/signup" class="btn btn-primary add-button">Add To Collection</a>
+                <% } %>
+                <button class="btn btn-primary go-back-button" onclick="goBack()">Go Back</button>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="card-body">
+                <h3 class="underline">Illustrator:</h3>
+                <p><%= cardData.illustrator %></p>
+                <h3 class="underline">Hitpoints:</h3>
+                <p><%= cardData.hitpoints %>HP</p>
+            
+                <h5 class="underline">Attacks:</h5>
+                <% if (attacksData.length > 0) { %> <% attacksData.forEach(attack => { %>
+                <p>Name: <%= attack.name %></p>
+                <p>Damage: <%= attack.damage %></p>
+                <p>Effect: <%= attack.effect %></p>
+                <% if (attack.cost1 !== 'n/a') { %>
+                <p>Cost 1: <%= attack.cost1 %></p>
+                <% } %> <% if (attack.cost2 !== 'n/a') { %>
+                <p>Cost 2: <%= attack.cost2 %></p>
+                <% } %> <% if (attack.cost3 !== 'n/a') { %>
+                <p>Cost 3: <%= attack.cost3 %></p>
+                <% } %>
+                <p>---------------------</p>
+                <% }); %> <% } else { %>
+                <p>None</p>
+                <p>---------------------</p>
+                <% } %>
+            
+                <h3 class="underline">Weaknesses:</h3>
+                <% if (weaknessesData.length > 0) { %> <% weaknessesData.forEach(weakness => { %>
+                <p>Type: <%= weakness.type %></p>
+                <p>Value: <%= weakness.value %></p>
+                <p>---------------------</p>
+                <% }); %> <% } else { %>
+                <p>None</p>
+                <p>---------------------</p>
+                <% } %>
+            
+                <h3 class="underline">Abilities:</h3>
+                <% if (abilitiesData.length > 0) { %> <% abilitiesData.forEach(ability => { %>
+                <p>Type: <%= ability.type %></p>
+                <p>Name: <%= ability.name %></p>
+                <p>Effect: <%= ability.effect %></p>
+                <p>---------------------</p>
+                <% }); %> <% } else { %>
+                <p>None</p>
+                <p>---------------------</p>
+                <% } %>
+            
+                <h3 class="underline">Resistances:</h3>
+                <% if (resistancesData.length > 0) { %> <% resistancesData.forEach(resistance => { %>
+                <p>Type: <%= resistance.type %></p>
+                <p>Value: <%= resistance.value %></p>
+                <p>---------------------</p>
+                <% }); %> <% } else { %>
+                <p>None</p>
+                <p>---------------------</p>
+                <% } %>
+              </div>
+            </div>
+
+
+           
+<script>
+  
+  document.getElementById('add-to-collection').addEventListener('click', function() {
+  fetch('http://localhost:4000/add-to-collection', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      user_id: '<%- user && user.id %>',
+      card_id: '<%- cardData.card_id %>',
+    }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Card added to collection successfully');
+      } else {
+        alert('Failed to add card to collection');
+      }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  });
+
+  // Function to navigate back
+  function goBack() {
+    window.history.back();
+  }
+
+  // Function for logout
+  function logout() {
+    fetch("/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert("Logout failed");
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+  }
+</script>
+    </div>
+  </body>
+</html>

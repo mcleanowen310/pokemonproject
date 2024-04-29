@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= titletext %></title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/signup.css" />
+  </head>
+  <body
+    class="d-flex align-items-center justify-content-center text-center vh-100"
+  >
+    <div class="d-flex align-items-center justify-content-center vh-100">
+      <div class="mx-auto">
+        <h1 class="display-4 font-weight-bold"><%= titletext %></h1>
+
+        <% if (typeof errorMessage !== 'undefined') { %>
+        <div class="alert alert-danger" role="alert"><%= errorMessage %></div>
+        <% } %>
+
+        <form class="py-3 mx-auto text-width" action="/signup" method="POST">
+          <div class="form-group">
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              placeholder="name@example.com"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="firstName"
+                name="firstName"
+                placeholder="First Name"
+                required
+                pattern="[a-zA-Z\s]+"
+                title="Please enter only letters and spaces"
+              />
+            </div>
+            <div class="form-group col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="lastName"
+                name="lastName"
+                placeholder="Last Name"
+                required
+                pattern="[a-zA-Z\s]+"
+                title="Please enter only letters and spaces"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="Password"
+              required
+            />
+          </div>
+          <div class="d-flex justify-content-around my-3">
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+          </div>
+        </form>
+        <p>Already have an account?</p>
+        <div class="d-flex justify-content-around my-3">
+          <a href="/login" class="btn btn-primary">Log In</a>
+        </div>
+
+        <p>Want to view as a guest?</p>
+        <div class="d-flex justify-content-around my-3">
+          <a href="/viewsets" class="btn btn-primary">Browse</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

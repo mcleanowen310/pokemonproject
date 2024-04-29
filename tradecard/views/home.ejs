@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= titletext %></title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/homescreen.css" />
+  </head>
+  <body
+    class="d-flex align-items-center justify-content-center text-center vh-100"
+  >
+    <div class="d-flex align-items-center justify-content-center vh-100">
+      <div class="mx-auto">
+        <h1 class="display-4 font-weight-bold"><%= titletext %></h1>
+        <p class="py-3 mx-auto text-width">
+          Hi there, this is Pokémon Central, a hub for viewing pokémon, creating
+          your very own wishlist, and viewing other users pokémon wishlists. We
+          hope you enjoy your stay, and have fun!
+        </p>
+        <div class="d-flex justify-content-around my-3">
+          <a href="/login" class="btn btn-primary">Log In</a>
+          <a href="/signup" class="btn btn-primary">Sign Up</a>
+          <a href="/viewsets" class="btn btn-primary">Browse</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

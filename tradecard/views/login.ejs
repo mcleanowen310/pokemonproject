@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= titletext %></title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/login.css" />
+  </head>
+  <body
+    class="d-flex align-items-center justify-content-center text-center vh-100"
+  >
+    <div class="d-flex align-items-center justify-content-center vh-100">
+      <div class="mx-auto">
+        <h1 class="display-4 font-weight-bold"><%= titletext %></h1>
+        <form class="py-3 mx-auto text-width" action="/login" method="POST">
+          <div class="form-group">
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              placeholder="name@example.com"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="Password"
+              required
+            />
+          </div>
+          <div class="d-flex justify-content-around my-3">
+            <button type="submit" class="btn btn-primary">Log In</button>
+          </div>
+        </form>
+        <p>Don't have an account yet?</p>
+        <div class="d-flex justify-content-around my-3">
+          <a href="/signup" class="btn btn-primary">Sign Up</a>
+        </div>
+        <p>Want to view as a guest?</p>
+        <div class="d-flex justify-content-around my-3">
+          <a href="/viewsets" class="btn btn-primary">Browse</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

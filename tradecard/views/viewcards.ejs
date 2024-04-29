@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View trading cards</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/viewcards.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="/">Pokémon Central</a>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/collectionlist">Collection</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/userinfo">User Info</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viewsets">Cards</a>
+        </li>
+      </ul>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          <% if (user) { %>
+          <li class="nav-item">
+            <span class="navbar-text mr-2">
+              Signed in as : <%= user.first_name %> <%= user.last_name %>
+            </span>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-primary" onclick="logout()">Log Out</button>
+          </li>
+          <% } else { %>
+          <li class="nav-item">
+            <a class="btn btn-primary" href="/login">Log In</a>
+          </li>
+          <% } %>
+          <li class="nav-item">
+            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-6">
+          <h2><%= titletext %></h2>
+        </div>
+        <div class="col-md-6 text-right">
+          <a href="/viewsets" class="btn btn-primary">Back to sets</a>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <h3>Selected Pokémon</h3>
+        </div>
+        <div class="col-md-6">
+          <!-- Sort dropdown -->
+          <div class="input-group">
+            <select id="sort-select" class="custom-select">
+              <option value="alphabetical">Alphabetical</option>
+              <option value="hitpoints-asc">Hitpoints (Low to High)</option>
+              <option value="hitpoints-desc">Hitpoints (High to Low)</option>
+              <option value="illustrator">Illustrator</option>
+            </select>
+            <input
+              type="text"
+              id="search"
+              class="form-control"
+              placeholder="Search..."
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4" id="pokemon-list">
+        <% pokedata['data'].forEach( (pokemon, index)=>{ %>
+        <div class="col-md-3 card-div">
+          <div
+            class="card mt-4 pokemon-card"
+            data-name="<%= pokemon.name.toLowerCase() %>"
+            data-hitpoints="<%= pokemon.hitpoints %>"
+            data-illustrator="<%= pokemon.illustrator %>"
+          >
+            <h5 class="card-title"><%= pokemon.name %></h5>
+            <img
+              src="<%= pokemon.img %>"
+              alt="<%= pokemon.name %>"
+              class="card-img-top"
+            />
+            <div class="card-body">
+              <a
+                href="/singlecard?item=<%= pokemon.card_id %>"
+                class="btn btn-primary view-details-button"
+              >
+                View details
+              </a>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <script>
+      // Keep a reference to all cards
+      var allPokemonCards = Array.from(
+        document.querySelectorAll(".pokemon-card")
+      );
+
+      document.getElementById("search").addEventListener("input", function (e) {
+        var searchQuery = e.target.value.toLowerCase();
+        var pokemonList = document.getElementById("pokemon-list");
+
+        // Clear the list currently being displayed
+        pokemonList.innerHTML = "";
+
+        if (searchQuery.length >= 1) {
+          allPokemonCards.forEach(function (card) {
+            var pokemonName = card.getAttribute("data-name");
+            if (pokemonName.startsWith(searchQuery)) {
+              pokemonList.appendChild(card.cloneNode(true));
+            }
+          });
+        } else {
+          allPokemonCards.forEach(function (card) {
+            pokemonList.appendChild(card.cloneNode(true));
+          });
+        }
+      });
+
+      // event listener for sort dropdown
+      document
+        .getElementById("sort-select")
+        .addEventListener("change", function (e) {
+          var sortOption = e.target.value;
+          var pokemonCards = Array.from(
+            document.querySelectorAll(".pokemon-card")
+          );
+          var pokemonList = document.getElementById("pokemon-list");
+
+          // Sort the cards based on the selected sort option
+          if (sortOption === "alphabetical") {
+            pokemonCards.sort(function (a, b) {
+              var nameA = a.getAttribute("data-name");
+              var nameB = b.getAttribute("data-name");
+              return nameA.localeCompare(nameB);
+            });
+          } else if (sortOption === "hitpoints-asc") {
+            pokemonCards.sort(function (a, b) {
+              var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
+              var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
+              return hpA - hpB;
+            });
+          } else if (sortOption === "hitpoints-desc") {
+            pokemonCards.sort(function (a, b) {
+              var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
+              var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
+              return hpB - hpA;
+            });
+          } else if (sortOption === "illustrator") {
+            pokemonCards.sort(function (a, b) {
+              var illustratorA = a.getAttribute("data-illustrator");
+              var illustratorB = b.getAttribute("data-illustrator");
+              return illustratorA.localeCompare(illustratorB);
+            });
+
+            // Clear the list currently being displayed
+            pokemonList.innerHTML = "";
+
+            // Add cards with a heading for each illustrator
+            var currentIllustrator = "";
+            pokemonCards.forEach(function (card) {
+              var illustrator = card.getAttribute("data-illustrator");
+              if (illustrator !== currentIllustrator) {
+                // Add a new heading
+                var heading = document.createElement("h3");
+                heading.textContent = "Illustrated by: " + illustrator;
+                heading.className = "illustrator-heading";
+                pokemonList.appendChild(heading);
+                currentIllustrator = illustrator;
+              }
+              pokemonList.appendChild(card);
+            });
+
+            // Return to avoid re-rendering below
+            return;
+          }
+
+          // Clear the list currently being displayed
+          pokemonList.innerHTML = "";
+
+          // Re-render the sorted cards
+          pokemonCards.forEach(function (card) {
+            pokemonList.appendChild(card);
+          });
+        });
+
+      function logout() {
+        fetch("/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert("Logout failed");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
