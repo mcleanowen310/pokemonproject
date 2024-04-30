@@ -9,7 +9,7 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="/viewsets.css" />
+    <link rel="stylesheet" type="text/css" href="/collectionlist.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -34,7 +34,7 @@
             </span>
           </li>
           <li class="nav-item">
-            <a class="btn btn-primary" href="/logout">Log Out</a>
+            <button class="btn btn-primary" onclick="logout()">Log Out</button>
           </li>
           <% } else { %>
           <li class="nav-item">
@@ -60,28 +60,91 @@
         </div>
       </div>
 
-      <div class="row" id="set-list">
-        <% collectionData['data'].forEach( (set, index)=>{ %>
-        <div class="col-sm-12 col-md-6 col-lg-4 col-xl-3">
-          <div class="card">
+      <div class="row mt-4" id="pokemon-list">
+        <% collectionData['data'].forEach( (pokemon, index)=>{ %>
+        <div class="col-md-3 card-div">
+          <div
+            class="card mt-4 pokemon-card"
+            data-name="<%= pokemon.name.toLowerCase() %>"
+            data-hitpoints="<%= pokemon.hitpoints %>"
+            data-illustrator="<%= pokemon.illustrator %>"
+          >
+            <h5 class="card-title"><%= pokemon.name %></h5>
             <img
+              src="<%= pokemon.img %>"
+              alt="<%= pokemon.name %>"
               class="card-img-top"
-              src="<%= set.logo %>"
-              alt="<%= set.name %>"
             />
             <div class="card-body">
-              <h5 class="card-title"><%= set.name %></h5>
               <a
-                href="/viewcards?set_id=<%= set.set_id %>"
-                class="btn btn-primary"
+                href="/singlecard?item=<%= pokemon.card_id %>"
+                class="btn btn-primary view-details-button"
               >
-                View cards
+                View details
               </a>
+              <button
+                class="btn btn-danger remove-from-collection-button"
+                data-card-id="<%= pokemon.card_id %>"
+              >
+                Remove from Collection
+              </button>
             </div>
           </div>
         </div>
         <% }); %>
       </div>
     </div>
+
+    <script>
+      document
+        .querySelectorAll(".remove-from-collection-button")
+        .forEach((button) => {
+          button.addEventListener("click", function () {
+            fetch("http://localhost:4000/remove-from-collection", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                user_id: "<%- user && user.id %>",
+                card_id: this.dataset.cardId,
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.success) {
+                  alert("Card removed from collection successfully");
+                  // Optionally, remove the card from the page
+                  this.closest(".card-div").remove();
+                } else {
+                  alert("Failed to remove card from collection");
+                }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          });
+        });
+
+      function logout() {
+        fetch("/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              window.location.href = "/viewsets";
+            } else {
+              alert("Logout failed");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
   </body>
 </html>

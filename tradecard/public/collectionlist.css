@@ -1,0 +1,37 @@
+#pokemon-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: start;
+}
+
+.card-div {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.card {
+  width: 16rem;
+  margin: 1rem;
+}
+
+.card-title {
+  font-size: 1.25rem;
+}
+
+.btn {
+  font-size: 1rem;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.view-details-button {
+  font-size: 1.2rem;
+  padding: 15px 30px;
+  margin-bottom: 10px;
+}

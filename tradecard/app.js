@@ -36,7 +36,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  res.render("login", { titletext: "Log In" });
+  let message = req.session.message;
+  req.session.message = null; // Clear the message after displaying it
+  res.render("login", { titletext: "Log In", message: message });
 });
 
 app.post("/login", (req, res) => {
@@ -49,7 +51,6 @@ app.post("/login", (req, res) => {
           id: response.data.user.user_id, // Include the user id
           first_name: response.data.user.first_name,
           last_name: response.data.user.last_name,
-          // Include other user details you want to store in the session
         };
         res.redirect("/viewsets");
       } else {
@@ -77,12 +78,12 @@ app.get("/signup", (req, res) => {
 });
 
 app.post("/signup", (req, res) => {
-  // Call your signup API
   axios
     .post("http://localhost:4000/signup", req.body)
     .then((response) => {
       // If signup is successful, redirect to login page
       if (response.status === 200) {
+        req.session.message = "User signup successful";
         res.redirect("/login");
       } else {
         // Handle any other response here
@@ -102,9 +103,98 @@ app.post("/signup", (req, res) => {
       ) {
         errorMessage =
           "Error signing up, please ensure the email used doesn't already have an account";
+      } else if (
+        error.response &&
+        error.response.data.message === "Username already in use"
+      ) {
+        errorMessage =
+          "Error signing up, please ensure the username used doesn't already have an account";
       }
       res.render("signup", {
         titletext: "Sign Up",
+        errorMessage: errorMessage,
+      });
+    });
+});
+
+// route for viewing and changing user information
+app.get("/userinfo", (req, res) => {
+  if (!req.session.user || !req.session.user.id) {
+    return res.redirect("/signup");
+  }
+
+  let user_id = req.session.user.id;
+  let ep = `http://localhost:4000/user/${user_id}`;
+
+  axios
+    .get(ep)
+    .then((response) => {
+      let userData = response.data;
+
+      res.render("userinfo", {
+        titletext: "User Information",
+        user: userData,
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.redirect("/login");
+    });
+});
+
+// allows a user to edit their information
+app.get("/edituserinfo", (req, res) => {
+  if (!req.session.user || !req.session.user.id) {
+    return res.redirect("/signup");
+  }
+
+  let user_id = req.session.user.id;
+  let ep = `http://localhost:4000/user/${user_id}`;
+
+  axios
+    .get(ep)
+    .then((response) => {
+      let userData = response.data;
+
+      res.render("edituserinfo", {
+        titletext: "Edit User Information",
+        user: userData,
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.redirect("/login");
+    });
+});
+
+// route to handle the post request for editing user information
+app.post("/edituserinfo", (req, res) => {
+  let userId = req.session.user.id;
+  let ep = `http://localhost:4000/user/${userId}`;
+
+  axios
+    .post(ep, req.body)
+    .then((response) => {
+      // If update is successful, redirect to user info page
+      if (response.status === 200) {
+        req.session.message = "User details updated successfully";
+        res.redirect("/userinfo");
+      } else {
+        // Handle any other response here
+        res.render("edituserinfo", {
+          titletext: "Edit User Information",
+          user: req.body,
+          errorMessage: "Update was not successful",
+        });
+      }
+    })
+    .catch((error) => {
+      // Handle error
+      console.error(error);
+      let errorMessage = "Error updating user details";
+      res.render("edituserinfo", {
+        titletext: "Edit User Information",
+        user: req.body,
         errorMessage: errorMessage,
       });
     });
@@ -205,6 +295,130 @@ app.get("/collectionlist", (req, res) => {
     .catch((err) => {
       console.error(err);
       res.status(500).json({ message: "Error fetching collection" });
+    });
+});
+
+app.get("/usercollections", (req, res) => {
+  if (!req.session.user || !req.session.user.id) {
+    return res.redirect("/signup");
+  }
+
+  let ep = `http://localhost:4000/user-collections`;
+
+  axios
+    .get(ep)
+    .then((response) => {
+      let userCollectionsData = response.data.data;
+
+      res.render("usercollections", {
+        titletext: "User Collections",
+        userCollectionsData,
+        user: req.session.user,
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error fetching user collections" });
+    });
+});
+
+// A route to view a user's collection
+app.get("/viewuserscollection/:user_id", (req, res) => {
+  let userId = req.params.user_id;
+  let ep = `http://localhost:4000/user-collections/${userId}`;
+  let userEp = `http://localhost:4000/user/${userId}`; // endpoint to get user details
+
+  axios
+    .all([axios.get(ep), axios.get(userEp)])
+    .then(
+      axios.spread((collectionRes, userRes) => {
+        let userCollectionData = collectionRes.data.data;
+        // Ensure user_id is passed correctly
+        userCollectionData = userCollectionData.map((collection) => ({
+          ...collection,
+          user_id: userId,
+        }));
+        let viewedUser = userRes.data; // get the viewed user's details
+        res.render("viewuserscollection", {
+          titletext: "User Collection",
+          userCollectionData,
+          user: req.session.user,
+          viewedUserId: userId, // pass the viewed user's id to the EJS file
+          viewedUser, // pass the viewed user's details to the EJS file
+        });
+      })
+    )
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error fetching user's collection" });
+    });
+});
+
+// A route to like a user's collection
+app.post("/likecollection/:ownerUserId", (req, res) => {
+  if (!req.session.user) {
+    // If there's no user in the session, redirect to login page
+    return res.redirect("/login");
+  }
+
+  let likerUserId = req.session.user.id;
+  let ownerUserId = req.params.ownerUserId;
+  let ep = `http://localhost:4000/likecollection/${ownerUserId}`;
+
+  axios
+    .post(ep, { liker_user_id: likerUserId, owner_user_id: ownerUserId })
+    .then((response) => {
+      res.redirect(`/viewuserscollection/${ownerUserId}`);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error liking collection" });
+    });
+});
+
+// A route to rate a user's collection
+app.post("/ratecollection/:user_id", (req, res) => {
+  if (!req.session.user) {
+    // If there's no user in the session, redirect to login page
+    return res.redirect("/login");
+  }
+
+  let raterId = req.session.user.id;
+  let rateeId = req.params.user_id;
+  let ratingValue = req.body.ratingValue; // Changed from req.body.rating
+  let ep = `http://localhost:4000/ratecollection`;
+
+  axios
+    .post(ep, { raterId, rateeId, ratingValue })
+    .then((response) => {
+      res.redirect(`/viewuserscollection/${rateeId}`);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error rating collection" });
+    });
+});
+
+// A route to leave a comment on a user's collection
+app.post("/leavecomment/:user_id", (req, res) => {
+  if (!req.session.user) {
+    // If there's no user in the session, redirect to login page
+    return res.redirect("/login");
+  }
+
+  let commenterId = req.session.user.id;
+  let commenteeId = req.params.user_id;
+  let commentText = req.body.commentText;
+  let ep = `http://localhost:4000/leavecomment`;
+
+  axios
+    .post(ep, { commenterId, commenteeId, commentText })
+    .then((response) => {
+      res.redirect(`/viewuserscollection/${commenteeId}`);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error posting comment" });
     });
 });
 

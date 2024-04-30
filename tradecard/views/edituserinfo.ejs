@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>View trading card sets</title>
+    <title><%= titletext %></title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="/viewsets.css" />
+    <link rel="stylesheet" type="text/css" href="/userinfo.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -20,9 +20,6 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/userinfo">User Info</a>
@@ -61,29 +58,61 @@
         </div>
       </div>
 
-      <div class="row" id="set-list">
-        <% setdata['data'].forEach( (set, index)=>{ %>
-        <div class="col-sm-12 col-md-6 col-lg-4 col-xl-3">
-          <div class="card">
-            <img
-              class="card-img-top"
-              src="<%= set.logo %>"
-              alt="<%= set.name %>"
-            />
-            <div class="card-body">
-              <h5 class="card-title"><%= set.name %></h5>
-              <a
-                href="/viewcards?set_id=<%= set.set_id %>"
-                class="btn btn-primary"
-              >
-                View cards
-              </a>
-            </div>
-          </div>
+      <form action="/edituserinfo" method="post">
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            value="<%= user.email %>"
+          />
         </div>
-        <% }); %>
-      </div>
+        <div class="form-group">
+          <label for="username">Username:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="username"
+            name="username"
+            value="<%= user.username %>"
+          />
+        </div>
+        <div class="form-group">
+          <label for="first_name">First Name:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="first_name"
+            name="first_name"
+            value="<%= user.first_name %>"
+          />
+        </div>
+        <div class="form-group">
+          <label for="last_name">Last Name:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="last_name"
+            name="last_name"
+            value="<%= user.last_name %>"
+          />
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            value="<%= user.password %>"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
     </div>
+
     <script>
       function logout() {
         fetch("/logout", {

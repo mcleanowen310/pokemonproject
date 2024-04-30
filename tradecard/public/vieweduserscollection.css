@@ -1,0 +1,13 @@
+.rating-form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rating-form label {
+  margin-right: 10px;
+}
+
+.rating-form select {
+  margin-right: 10px;
+}

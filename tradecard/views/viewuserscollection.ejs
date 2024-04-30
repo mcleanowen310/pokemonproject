@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Collections</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="/vieweduserscollection.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="/">Pokémon Central</a>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/collectionlist">Collection</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/userinfo">User Info</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viewsets">Cards</a>
+        </li>
+      </ul>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          <% if (user) { %>
+          <li class="nav-item">
+            <span class="navbar-text mr-2">
+              Signed in as : <%= user.first_name %> <%= user.last_name %>
+            </span>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-primary" onclick="logout()">Log Out</button>
+          </li>
+          <% } else { %>
+          <li class="nav-item">
+            <a class="btn btn-primary" href="/login">Log In</a>
+          </li>
+          <% } %>
+          <li class="nav-item">
+            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-6">
+          <h2><%= titletext %> of <%= viewedUser.username %></h2>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end align-items-center">
+          <form
+            action="/ratecollection/<%= viewedUserId %>"
+            method="post"
+            onsubmit="displayThankYouMessage(event)"
+            class="rating-form mr-2"
+          >
+            <input type="hidden" name="raterId" value="<%= user.user_id %>" />
+            <input type="hidden" name="rateeId" value="<%= viewedUserId %>" />
+            <label for="rating">Rate this collection:</label>
+            <select name="ratingValue" id="rating">
+              <% for (let i = 1; i <= 10; i++) { %>
+              <option value="<%= i %>"><%= i %></option>
+              <% } %>
+            </select>
+            <input type="submit" value="Submit" />
+          </form>
+          <a href="/usercollections" class="btn btn-primary">Back to users</a>
+        </div>
+      </div>
+
+      <form
+        action="/leavecomment/<%= viewedUserId %>"
+        method="post"
+        onsubmit="displayThankYouMessage(event)"
+        class="comment-form mr-2"
+      >
+        <input type="hidden" name="commenterId" value="<%= user.user_id %>" />
+        <input type="hidden" name="commenteeId" value="<%= viewedUserId %>" />
+        <label for="comment">Leave a comment:</label>
+        <textarea name="commentText" id="comment"></textarea>
+        <input type="submit" value="Submit" />
+      </form>
+      <div id="thankYouMessage" style="display: none">
+        Thank you for leaving a rating or comment!
+      </div>
+      <form
+        action="/likecollection/<%= viewedUserId %>"
+        method="post"
+        class="like-form"
+      >
+        <input type="hidden" name="likerId" value="<%= user.user_id %>" />
+        <input type="hidden" name="likeeId" value="<%= viewedUserId %>" />
+        <button type="submit" class="btn btn-primary">
+          Like this collection
+        </button>
+      </form>
+      <div class="row mt-4">
+        <% userCollectionData.forEach( (pokemon, index)=>{ %>
+        <div class="col-md-3">
+          <div class="card mt-4">
+            <img
+              src="<%= pokemon.img %>"
+              class="card-img-top"
+              alt="<%= pokemon.name %>"
+            />
+            <div class="card-body">
+              <h5 class="card-title"><%= pokemon.name %></h5>
+              <a
+                href="/singlecard?item=<%= pokemon.card_id %>"
+                class="btn btn-primary"
+              >
+                View Details
+              </a>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <script>
+      function displayThankYouMessage(event) {
+        event.preventDefault();
+        document.getElementById("thankYouMessage").style.display = "block";
+        setTimeout(function () {
+          event.target.submit();
+        }, 2000);
+      }
+    </script>
+  </body>
+</html>

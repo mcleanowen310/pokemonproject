@@ -137,6 +137,39 @@ app.post("/add-to-collection", (req, res) => {
   });
 });
 
+// Express route for removing a card from the collection
+app.post("/remove-from-collection", (req, res) => {
+  let user_id = req.body.user_id;
+  let card_id = req.body.card_id;
+
+  console.log("Removing card from collection...");
+  console.log("User ID:", user_id);
+  console.log("Card ID:", card_id);
+
+  // Construct your SQL query to delete the data from the collection table
+  let removeFromCollectionQuery = `DELETE FROM collection WHERE user_id = ? AND card_id = ?`;
+
+  // Execute the query with the user_id and card_id values
+  connection.query(
+    removeFromCollectionQuery,
+    [user_id, card_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error removing card from collection:", err);
+        res.status(500).json({
+          success: false,
+          error: "Failed to remove card from collection",
+        });
+      } else {
+        // If the query executes successfully, send a success response
+        console.log("Card removed from collection successfully.");
+        res.status(200).json({ success: true });
+      }
+    }
+  );
+});
+
+// this returns the users collection for the my collection page
 app.get("/collection/:user_id", (req, res) => {
   let user_id = req.params.user_id;
   let getCollection = `SELECT card.* FROM collection JOIN card ON collection.card_id = card.card_id WHERE collection.user_id = ?`;
@@ -146,9 +179,90 @@ app.get("/collection/:user_id", (req, res) => {
   });
 });
 
-// This allows a user to sign up for the website and have an account created in the user table of the database
+// This returns all the user collections and their associated Pokemon
+app.get("/user-collections", (req, res) => {
+  let getUserCollections = `
+    SELECT DISTINCT user.user_id, user.username, user.first_name, user.last_name
+    FROM collection 
+    JOIN user ON collection.user_id = user.user_id`;
+  connection.query(getUserCollections, (err, data) => {
+    if (err) throw err;
+    res.json({ data });
+  });
+});
+
+// This returns a specific user's collection
+app.get("/user-collections/:user_id", (req, res) => {
+  let userId = req.params.user_id;
+  let getUserCollection = `
+  SELECT collection.user_id, card.card_id, card.name, card.img
+  FROM collection 
+  JOIN card ON collection.card_id = card.card_id
+  WHERE collection.user_id = ?`;
+  connection.query(getUserCollection, [userId], (err, data) => {
+    if (err) throw err;
+    res.json({ data });
+  });
+});
+
+// This adds a new user rating to the ratings table in the database
+app.post("/ratecollection", (req, res) => {
+  let { raterId, rateeId, ratingValue } = req.body;
+  let insertRating = `
+  INSERT INTO ratings (rater_id, ratee_id, rating_value)
+  VALUES (?, ?, ?)`;
+  connection.query(
+    insertRating,
+    [raterId, rateeId, ratingValue],
+    (err, data) => {
+      if (err) throw err;
+      res.json({ success: true });
+    }
+  );
+});
+
+// This adds a new comment to the comments table in the database
+app.post("/leavecomment", (req, res) => {
+  let { commenterId, commenteeId, commentText } = req.body;
+  let insertComment = `
+  INSERT INTO comments (commenter_id, commentee_id, comment_text)
+  VALUES (?, ?, ?)`;
+  connection.query(
+    insertComment,
+    [commenterId, commenteeId, commentText],
+    (err, data) => {
+      if (err) throw err;
+      res.json({ success: true });
+    }
+  );
+});
+
+// liking another user's collection
+app.post("/likecollection/:ownerUserId", (req, res) => {
+  const likerUserId = req.body.liker_user_id;
+  const ownerUserId = req.body.owner_user_id;
+
+  // Insert the liked collection into the database
+  connection.query(
+    "INSERT INTO liked_collections (liker_user_id, owner_user_id) VALUES (?, ?)",
+    [likerUserId, ownerUserId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ error: "An error occurred while liking the collection." });
+      } else {
+        res.status(200).json({ message: "Collection liked successfully." });
+      }
+    }
+  );
+});
+
+// allows a user to sign up and create a new account
 app.post("/signup", (req, res) => {
   let email = req.body.email;
+  let username = req.body.username;
   let firstName = req.body.firstName;
   let lastName = req.body.lastName;
   let password = req.body.password;
@@ -166,19 +280,33 @@ app.post("/signup", (req, res) => {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    // If email does not exist, create new user
-    let addUser = `INSERT INTO user (email, first_name, last_name, password, role) 
-                           VALUES('${email}', '${firstName}', '${lastName}', '${password}', "user"); `;
-    connection.query(addUser, (err, data) => {
+    // Check if username already in database
+    let checkUsername = `SELECT * FROM user WHERE username = '${username}'`;
+    connection.query(checkUsername, (err, data) => {
       if (err) {
-        res.status(500).json({ err });
-        throw err;
+        console.error(err);
+        return res.status(500).json({ message: "Error checking username" });
       }
 
-      if (data) {
-        // Return a success status
-        res.status(200).end();
+      if (data.length > 0) {
+        // User with this username already exists
+        return res.status(400).json({ message: "Username already in use" });
       }
+
+      // If email and username do not exist, create new user
+      let addUser = `INSERT INTO user (email, username, first_name, last_name, password, role) 
+                             VALUES('${email}', '${username}', '${firstName}', '${lastName}', '${password}', "user"); `;
+      connection.query(addUser, (err, data) => {
+        if (err) {
+          res.status(500).json({ err });
+          throw err;
+        }
+
+        if (data) {
+          // Return a success status
+          res.status(200).end();
+        }
+      });
     });
   });
 });
@@ -215,13 +343,11 @@ app.post("/login", (req, res) => {
   });
 });
 
-// Fetches the user details from the database based on the user's ID stored in the session
-app.get("/user", (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ message: "Not logged in" });
-  }
+// Fetches the user details from the database based on the user's ID passed in the URL
+app.get("/user/:userId", (req, res) => {
+  let userId = req.params.userId;
 
-  let getUser = `SELECT * FROM user WHERE id = ${req.session.userId}`;
+  let getUser = `SELECT * FROM user WHERE user_id = ${userId}`;
 
   connection.query(getUser, (err, data) => {
     if (err) {
@@ -235,6 +361,27 @@ app.get("/user", (req, res) => {
       }
     }
   });
+});
+
+// allows a user to update their details in the database
+app.post("/user/:userId", (req, res) => {
+  let userId = req.params.userId;
+  let { email, username, first_name, last_name, password } = req.body;
+
+  let updateUser = `UPDATE user SET email = ?, username = ?, first_name = ?, last_name = ?, password = ? WHERE user_id = ?`;
+
+  connection.query(
+    updateUser,
+    [email, username, first_name, last_name, password, userId],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error updating user details" });
+      } else {
+        res.json({ message: "User details updated successfully" });
+      }
+    }
+  );
 });
 
 // This allows a user to add a card to the card table of the database, lock off to admin if used

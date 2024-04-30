@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>View trading card sets</title>
+    <title><%= titletext %></title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="/viewsets.css" />
+    <link rel="stylesheet" type="text/css" href="/userinfo.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -20,9 +20,6 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/userinfo">User Info</a>
@@ -61,29 +58,18 @@
         </div>
       </div>
 
-      <div class="row" id="set-list">
-        <% setdata['data'].forEach( (set, index)=>{ %>
-        <div class="col-sm-12 col-md-6 col-lg-4 col-xl-3">
-          <div class="card">
-            <img
-              class="card-img-top"
-              src="<%= set.logo %>"
-              alt="<%= set.name %>"
-            />
-            <div class="card-body">
-              <h5 class="card-title"><%= set.name %></h5>
-              <a
-                href="/viewcards?set_id=<%= set.set_id %>"
-                class="btn btn-primary"
-              >
-                View cards
-              </a>
-            </div>
-          </div>
-        </div>
-        <% }); %>
+      <div class="py-3 mx-auto text-width">
+        <p>Email: <%= user.email %></p>
+        <p>Username: <%= user.username %></p>
+        <p>First Name: <%= user.first_name %></p>
+        <p>Last Name: <%= user.last_name %></p>
+        <p>Password: <%= user.password %></p>
+      </div>
+      <div class="d-flex justify-content-around my-3">
+        <a href="/edituserinfo" class="btn btn-primary">Edit Information</a>
       </div>
     </div>
+
     <script>
       function logout() {
         fetch("/logout", {

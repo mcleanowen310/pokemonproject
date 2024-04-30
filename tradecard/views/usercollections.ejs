@@ -4,25 +4,19 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>View trading card sets</title>
+    <title>User Collections</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="/viewsets.css" />
+    <link rel="stylesheet" type="text/css" href="/usercollections.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <a class="navbar-brand" href="/">Pokémon Central</a>
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-          <a class="nav-link" href="/collectionlist">My Collection</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
+          <a class="nav-link" href="/collectionlist">Collection</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/userinfo">User Info</a>
@@ -54,36 +48,31 @@
       </div>
     </nav>
 
-    <div class="container">
-      <div class="header">
-        <div class="title">
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-6">
           <h2><%= titletext %></h2>
+        </div>
+        <div class="col-md-6 text-right">
+          <a href="/viewsets" class="btn btn-primary">Back to sets</a>
         </div>
       </div>
 
-      <div class="row" id="set-list">
-        <% setdata['data'].forEach( (set, index)=>{ %>
-        <div class="col-sm-12 col-md-6 col-lg-4 col-xl-3">
-          <div class="card">
-            <img
-              class="card-img-top"
-              src="<%= set.logo %>"
-              alt="<%= set.name %>"
-            />
-            <div class="card-body">
-              <h5 class="card-title"><%= set.name %></h5>
-              <a
-                href="/viewcards?set_id=<%= set.set_id %>"
-                class="btn btn-primary"
-              >
-                View cards
-              </a>
-            </div>
-          </div>
+      <div class="row mt-4">
+        <% userCollectionsData.forEach((userCollection, index) => { %> <% if
+        (userCollection.user_id !== user.id) { %>
+        <div class="col-md-3">
+          <a
+            href="/viewuserscollection/<%= userCollection.user_id %>"
+            class="btn btn-primary mt-4"
+          >
+            <%= userCollection.username %>
+          </a>
         </div>
-        <% }); %>
+        <% } %> <% }); %>
       </div>
     </div>
+
     <script>
       function logout() {
         fetch("/logout", {
