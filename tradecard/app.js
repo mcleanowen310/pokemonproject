@@ -278,23 +278,32 @@ app.get("/collectionlist", (req, res) => {
   }
 
   let user_id = req.session.user.id;
-  //   console.log(`user_id: ${user_id}`);
   let ep = `http://localhost:4000/collection/${user_id}`;
 
   axios
-    .get(ep)
-    .then((response) => {
-      let collectionData = response.data;
+    .all([
+      axios.get(ep),
+      axios.get(`http://localhost:4000/ratings/${user_id}`),
+      axios.get(`http://localhost:4000/comments/${user_id}`),
+    ])
+    .then(
+      axios.spread((collectionRes, ratingsRes, commentsRes) => {
+        let collectionData = collectionRes.data;
+        let ratingsData = ratingsRes.data;
+        let commentsData = commentsRes.data;
 
-      res.render("collectionlist", {
-        titletext: "My Collection",
-        collectionData,
-        user: req.session.user,
-      });
-    })
+        res.render("collectionlist", {
+          titletext: "My Collection",
+          collectionData,
+          ratingsData,
+          commentsData,
+          user: req.session.user,
+        });
+      })
+    )
     .catch((err) => {
       console.error(err);
-      res.status(500).json({ message: "Error fetching collection" });
+      res.status(500).json({ message: "Error fetching data" });
     });
 });
 
@@ -419,6 +428,32 @@ app.post("/leavecomment/:user_id", (req, res) => {
     .catch((err) => {
       console.error(err);
       res.status(500).json({ message: "Error posting comment" });
+    });
+});
+
+// A route to view a user's liked collections
+app.get("/likedcollections", function (req, res) {
+  if (!req.session.user || !req.session.user.id) {
+    return res.redirect("/signup");
+  }
+
+  let user_id = req.session.user.id;
+  let ep = `http://localhost:4000/likedcollections/${user_id}`;
+
+  axios
+    .get(ep)
+    .then((likedCollectionsRes) => {
+      let likedCollectionsData = likedCollectionsRes.data;
+
+      res.render("likedcollections", {
+        titletext: "Liked Collections",
+        likedCollectionsData,
+        user: req.session.user,
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Error fetching data" });
     });
 });
 

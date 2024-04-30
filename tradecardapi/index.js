@@ -191,6 +191,46 @@ app.get("/user-collections", (req, res) => {
   });
 });
 
+// Fetch ratings for a user
+app.get("/ratings/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  connection.query(
+    "SELECT * FROM ratings WHERE ratee_id = ?",
+    [userId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ error: "An error occurred while fetching the ratings." });
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// Fetch comments for a user
+app.get("/comments/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  connection.query(
+    "SELECT comments.*, user.username AS commenter_username FROM comments JOIN user ON comments.commenter_id = user.user_id WHERE commentee_id = ?",
+    [userId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ error: "An error occurred while fetching the comments." });
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
 // This returns a specific user's collection
 app.get("/user-collections/:user_id", (req, res) => {
   let userId = req.params.user_id;
@@ -254,6 +294,55 @@ app.post("/likecollection/:ownerUserId", (req, res) => {
           .json({ error: "An error occurred while liking the collection." });
       } else {
         res.status(200).json({ message: "Collection liked successfully." });
+      }
+    }
+  );
+});
+
+// this gets all the liked collections for a user
+app.get("/likedcollections/:user_id", (req, res) => {
+  const userId = req.params.user_id;
+
+  const query = `
+    SELECT user.username, user.user_id
+    FROM liked_collections
+    JOIN user ON liked_collections.owner_user_id = user.user_id
+    WHERE liked_collections.liker_user_id = ?
+  `;
+
+  connection.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error fetching data" });
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+app.post("/remove-from-liked", (req, res) => {
+  let liker_user_id = req.body.liker_user_id;
+  let owner_user_id = req.body.owner_user_id; // Changed from collection_id
+
+  console.log("Removing collection from liked...");
+  console.log("Liker User ID:", liker_user_id);
+  console.log("Owner User ID:", owner_user_id); // Changed from Collection ID
+
+  let removeFromLikedQuery = `DELETE FROM liked_collections WHERE liker_user_id = ? AND owner_user_id = ?`;
+
+  connection.query(
+    removeFromLikedQuery,
+    [liker_user_id, owner_user_id],
+    (err, result) => {
+      if (err) {
+        console.error("Error removing collection from liked:", err);
+        res.status(500).json({
+          success: false,
+          error: "Failed to remove collection from liked",
+        });
+      } else {
+        console.log("Collection removed from liked successfully.");
+        res.status(200).json({ success: true });
       }
     }
   );

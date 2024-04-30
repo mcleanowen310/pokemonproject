@@ -16,7 +16,13 @@
       <a class="navbar-brand" href="/">Pokémon Central</a>
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-          <a class="nav-link" href="/collectionlist">Collection</a>
+          <a class="nav-link" href="/collectionlist">My Collection</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/usercollections">User Collections</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/likedcollections">Liked Collections</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/userinfo">User Info</a>
@@ -94,6 +100,31 @@
         <% }); %>
       </div>
     </div>
+    <!-- display the ratings -->
+    <% let totalRating = 0; ratingsData.forEach( (rating) => { totalRating +=
+    rating.rating_value; }); let averageRating = (totalRating /
+    ratingsData.length).toFixed(2); %>
+
+    <div class="average-score">
+      <p>
+        Average Collection Score From Other Users: <%= averageRating %> out of
+        10
+      </p>
+    </div>
+
+    <!-- display the comments -->
+    <% commentsData.forEach( (comment)=>{ %>
+    <div class="comment-box">
+      <p>Username: <%= comment.commenter_username %></p>
+      <p>Comment: <%= comment.comment_text %></p>
+      <button
+        class="btn btn-danger remove-comment-button"
+        data-comment-id="<%= comment.comment_id %>"
+      >
+        Remove Comment
+      </button>
+    </div>
+    <% }); %>
 
     <script>
       document

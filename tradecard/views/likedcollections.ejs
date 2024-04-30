@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Collections</title>
+    <title>Liked Collections</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="/usercollections.css" />
+    <link rel="stylesheet" type="text/css" href="/likedcollections.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -65,21 +65,55 @@
       </div>
 
       <div class="row mt-4">
-        <% userCollectionsData.forEach((userCollection, index) => { %> <% if
-        (userCollection.user_id !== user.id) { %>
-        <div class="col-md-3">
-          <a
-            href="/viewuserscollection/<%= userCollection.user_id %>"
-            class="btn btn-primary mt-4"
-          >
-            <%= userCollection.username %>
-          </a>
+        <% likedCollectionsData.forEach((likedCollection, index) => { %>
+        <div class="col-sm-12 col-md-6 col-lg-4 col-xl-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title"><%= likedCollection.username %></h5>
+              <a
+                href="/viewuserscollection/<%= likedCollection.user_id %>"
+                class="btn btn-primary"
+              >
+                View Collection
+              </a>
+              <button
+                class="btn btn-danger mt-2"
+                data-collection-id="<%= likedCollection.id %>"
+                data-owner-user-id="<%= likedCollection.user_id %>"
+              >
+                Remove from Liked
+              </button>
+            </div>
+          </div>
         </div>
-        <% } %> <% }); %>
+        <% }); %>
       </div>
     </div>
 
     <script>
+      document.querySelectorAll("[data-collection-id]").forEach((button) => {
+        button.addEventListener("click", function () {
+          fetch("http://localhost:4000/remove-from-liked", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              liker_user_id: "<%- user && user.id %>",
+              owner_user_id: this.dataset.ownerUserId, // Changed from this.dataset.collectionId
+            }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                alert("Collection removed from liked successfully");
+                this.closest(".col-sm-12").remove();
+              } else {
+                alert("Failed to remove collection from liked");
+              }
+            });
+        });
+      });
       function logout() {
         fetch("/logout", {
           method: "POST",

@@ -93,6 +93,7 @@
         action="/likecollection/<%= viewedUserId %>"
         method="post"
         class="like-form"
+        onsubmit="displayLikeMessage(event)"
       >
         <input type="hidden" name="likerId" value="<%= user.user_id %>" />
         <input type="hidden" name="likeeId" value="<%= viewedUserId %>" />
@@ -100,6 +101,9 @@
           Like this collection
         </button>
       </form>
+      <div id="likeMessage" style="display: none">
+        This collection has been added to your liked collections
+      </div>
       <div class="row mt-4">
         <% userCollectionData.forEach( (pokemon, index)=>{ %>
         <div class="col-md-3">
@@ -125,6 +129,13 @@
     </div>
 
     <script>
+      function displayLikeMessage(event) {
+        event.preventDefault();
+        document.getElementById("likeMessage").style.display = "block";
+        setTimeout(function () {
+          event.target.submit();
+        }, 2000);
+      }
       function displayThankYouMessage(event) {
         event.preventDefault();
         document.getElementById("thankYouMessage").style.display = "block";
