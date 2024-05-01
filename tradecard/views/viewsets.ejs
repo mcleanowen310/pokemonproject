@@ -12,47 +12,7 @@
     <link rel="stylesheet" type="text/css" href="/viewsets.css" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="/">Pokémon Central</a>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/collectionlist">My Collection</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/userinfo">User Info</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/viewsets">Cards</a>
-        </li>
-      </ul>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          <% if (user) { %>
-          <li class="nav-item">
-            <span class="navbar-text mr-2">
-              Signed in as : <%= user.first_name %> <%= user.last_name %>
-            </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-primary" onclick="logout()">Log Out</button>
-          </li>
-          <% } else { %>
-          <li class="nav-item">
-            <a class="btn btn-primary" href="/login">Log In</a>
-          </li>
-          <% } %>
-          <li class="nav-item">
-            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <%- include('navbar') %>
 
     <div class="container">
       <div class="header">

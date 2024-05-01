@@ -78,6 +78,8 @@
               placeholder="Password"
               required
             />
+            <input type="checkbox" onclick="showPassword()" />
+            Show Password
           </div>
           <div class="d-flex justify-content-around my-3">
             <button type="submit" class="btn btn-primary">Sign Up</button>
@@ -94,5 +96,15 @@
         </div>
       </div>
     </div>
+    <script>
+      function showPassword() {
+        var passwordInput = document.getElementById("password");
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+        } else {
+          passwordInput.type = "password";
+        }
+      }
+    </script>
   </body>
 </html>

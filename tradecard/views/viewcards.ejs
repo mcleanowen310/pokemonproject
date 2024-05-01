@@ -12,47 +12,7 @@
     <link rel="stylesheet" type="text/css" href="/viewcards.css" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="/">Pokémon Central</a>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/collectionlist">My Collection</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/userinfo">User Info</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/viewsets">Cards</a>
-        </li>
-      </ul>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          <% if (user) { %>
-          <li class="nav-item">
-            <span class="navbar-text mr-2">
-              Signed in as : <%= user.first_name %> <%= user.last_name %>
-            </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-primary" onclick="logout()">Log Out</button>
-          </li>
-          <% } else { %>
-          <li class="nav-item">
-            <a class="btn btn-primary" href="/login">Log In</a>
-          </li>
-          <% } %>
-          <li class="nav-item">
-            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <%- include('navbar') %>
 
     <div class="container mt-4">
       <div class="row">
@@ -122,92 +82,89 @@
         document.querySelectorAll(".pokemon-card")
       );
 
+      // Event listener for search input
       document.getElementById("search").addEventListener("input", function (e) {
         var searchQuery = e.target.value.toLowerCase();
         var pokemonList = document.getElementById("pokemon-list");
+        var sortOption = document.getElementById("sort-select").value;
 
         // Clear the list currently being displayed
         pokemonList.innerHTML = "";
 
-        if (searchQuery.length >= 1) {
-          allPokemonCards.forEach(function (card) {
-            var pokemonName = card.getAttribute("data-name");
-            if (pokemonName.startsWith(searchQuery)) {
-              pokemonList.appendChild(card.cloneNode(true));
+        // Filter the cards based on the search query
+        var filteredCards = allPokemonCards.filter(function (card) {
+          var pokemonName = card.getAttribute("data-name");
+          return pokemonName.startsWith(searchQuery);
+        });
+
+        // Sort the filtered cards based on the current sort option
+        if (sortOption === "alphabetical") {
+          filteredCards.sort(function (a, b) {
+            var nameA = a.getAttribute("data-name");
+            var nameB = b.getAttribute("data-name");
+            return nameA.localeCompare(nameB);
+          });
+        } else if (sortOption === "hitpoints-asc") {
+          filteredCards.sort(function (a, b) {
+            var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
+            var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
+            return hpA - hpB;
+          });
+        } else if (sortOption === "hitpoints-desc") {
+          filteredCards.sort(function (a, b) {
+            var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
+            var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
+            return hpB - hpA;
+          });
+        } else if (sortOption === "illustrator") {
+          filteredCards.sort(function (a, b) {
+            var illustratorA = a.getAttribute("data-illustrator");
+            var illustratorB = b.getAttribute("data-illustrator");
+            return illustratorA.localeCompare(illustratorB);
+          });
+
+          // Add cards with a heading for each illustrator
+          var currentIllustrator = "";
+          var illustratorDiv = null;
+          filteredCards.forEach(function (card) {
+            var illustrator = card.getAttribute("data-illustrator");
+            if (illustrator !== currentIllustrator) {
+              // Create a new div for the new illustrator
+              illustratorDiv = document.createElement("div");
+              illustratorDiv.className = "illustrator-div";
+
+              // Add a new heading
+              var heading = document.createElement("h3");
+              heading.textContent = "Illustrated by: " + illustrator;
+              heading.className = "illustrator-heading";
+              illustratorDiv.appendChild(heading);
+
+              // Append the new div to the pokemon list
+              pokemonList.appendChild(illustratorDiv);
+
+              currentIllustrator = illustrator;
             }
+
+            // Append the card to the current illustrator div
+            illustratorDiv.appendChild(card.cloneNode(true));
           });
-        } else {
-          allPokemonCards.forEach(function (card) {
-            pokemonList.appendChild(card.cloneNode(true));
-          });
+
+          // Return to avoid re-rendering below
+          return;
         }
+
+        // Display the sorted and filtered cards
+        filteredCards.forEach(function (card) {
+          pokemonList.appendChild(card.cloneNode(true));
+        });
       });
 
-      // event listener for sort dropdown
+      // Event listener for sort dropdown
       document
         .getElementById("sort-select")
         .addEventListener("change", function (e) {
-          var sortOption = e.target.value;
-          var pokemonCards = Array.from(
-            document.querySelectorAll(".pokemon-card")
-          );
-          var pokemonList = document.getElementById("pokemon-list");
-
-          // Sort the cards based on the selected sort option
-          if (sortOption === "alphabetical") {
-            pokemonCards.sort(function (a, b) {
-              var nameA = a.getAttribute("data-name");
-              var nameB = b.getAttribute("data-name");
-              return nameA.localeCompare(nameB);
-            });
-          } else if (sortOption === "hitpoints-asc") {
-            pokemonCards.sort(function (a, b) {
-              var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
-              var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
-              return hpA - hpB;
-            });
-          } else if (sortOption === "hitpoints-desc") {
-            pokemonCards.sort(function (a, b) {
-              var hpA = parseInt(a.getAttribute("data-hitpoints"), 10);
-              var hpB = parseInt(b.getAttribute("data-hitpoints"), 10);
-              return hpB - hpA;
-            });
-          } else if (sortOption === "illustrator") {
-            pokemonCards.sort(function (a, b) {
-              var illustratorA = a.getAttribute("data-illustrator");
-              var illustratorB = b.getAttribute("data-illustrator");
-              return illustratorA.localeCompare(illustratorB);
-            });
-
-            // Clear the list currently being displayed
-            pokemonList.innerHTML = "";
-
-            // Add cards with a heading for each illustrator
-            var currentIllustrator = "";
-            pokemonCards.forEach(function (card) {
-              var illustrator = card.getAttribute("data-illustrator");
-              if (illustrator !== currentIllustrator) {
-                // Add a new heading
-                var heading = document.createElement("h3");
-                heading.textContent = "Illustrated by: " + illustrator;
-                heading.className = "illustrator-heading";
-                pokemonList.appendChild(heading);
-                currentIllustrator = illustrator;
-              }
-              pokemonList.appendChild(card);
-            });
-
-            // Return to avoid re-rendering below
-            return;
-          }
-
-          // Clear the list currently being displayed
-          pokemonList.innerHTML = "";
-
-          // Re-render the sorted cards
-          pokemonCards.forEach(function (card) {
-            pokemonList.appendChild(card);
-          });
+          // Trigger the search input event to refresh the list
+          document.getElementById("search").dispatchEvent(new Event("input"));
         });
 
       function logout() {

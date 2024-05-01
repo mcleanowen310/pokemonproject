@@ -58,3 +58,9 @@
   font-size: 1.2rem;
   padding: 15px 30px;
 }
+
+.illustrator-div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 50px;
+}

@@ -8,6 +8,10 @@ const mysql = require("mysql2");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 
+// code for password hashing using bcrypt
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 const PORT = process.env.PORT || 4000;
 app.set("view engine", "ejs");
 
@@ -110,7 +114,7 @@ app.get("/app/:rowid", (req, res) => {
   });
 });
 
-// Express route for adding a card to the collection
+// route for adding a card to the collection
 app.post("/add-to-collection", (req, res) => {
   let user_id = req.body.user_id;
   let card_id = req.body.card_id;
@@ -119,34 +123,59 @@ app.post("/add-to-collection", (req, res) => {
   console.log("User ID:", user_id);
   console.log("Card ID:", card_id);
 
-  // Construct your SQL query to insert the data into the collection table
-  let addToCollectionQuery = `INSERT INTO collection (user_id, card_id) VALUES (?, ?)`;
+  // First, check if the card already exists in the user's collection
+  let checkCardQuery = `SELECT * FROM collection WHERE user_id = ? AND card_id = ?`;
 
-  // Execute the query with the user_id and card_id values
-  connection.query(addToCollectionQuery, [user_id, card_id], (err, result) => {
+  connection.query(checkCardQuery, [user_id, card_id], (err, result) => {
     if (err) {
-      console.error("Error adding card to collection:", err);
+      console.error("Error checking card in collection:", err);
       res
         .status(500)
-        .json({ success: false, error: "Failed to add card to collection" });
+        .json({ success: false, error: "Failed to check card in collection" });
     } else {
-      // If the query executes successfully, send a success response
-      console.log("Card added to collection successfully.");
-      res.status(200).json({ success: true });
+      if (result.length > 0) {
+        // If the card already exists in the collection, send a specific message
+        console.log("Card already in collection.");
+        res.status(200).json({
+          success: false,
+          message: "You already have this card in your collection",
+        });
+      } else {
+        // If the card does not exist in the collection, insert it
+        let addToCollectionQuery = `INSERT INTO collection (user_id, card_id) VALUES (?, ?)`;
+
+        connection.query(
+          addToCollectionQuery,
+          [user_id, card_id],
+          (err, result) => {
+            if (err) {
+              console.error("Error adding card to collection:", err);
+              res.status(500).json({
+                success: false,
+                error: "Failed to add card to collection",
+              });
+            } else {
+              // If the query executes successfully, send a success response
+              console.log("Card added to collection successfully.");
+              res.status(200).json({ success: true });
+            }
+          }
+        );
+      }
     }
   });
 });
 
-// Express route for removing a card from the collection
-app.post("/remove-from-collection", (req, res) => {
-  let user_id = req.body.user_id;
-  let card_id = req.body.card_id;
+// removing a card from the collection
+app.delete("/remove-from-collection/:userId/:cardId", (req, res) => {
+  let user_id = req.params.userId;
+  let card_id = req.params.cardId;
 
   console.log("Removing card from collection...");
   console.log("User ID:", user_id);
   console.log("Card ID:", card_id);
 
-  // Construct your SQL query to delete the data from the collection table
+  // SQL query to delete the data from the collection table
   let removeFromCollectionQuery = `DELETE FROM collection WHERE user_id = ? AND card_id = ?`;
 
   // Execute the query with the user_id and card_id values
@@ -231,6 +260,26 @@ app.get("/comments/:userId", (req, res) => {
   );
 });
 
+// Delete a comment
+app.delete("/comments/:commentId", (req, res) => {
+  const commentId = req.params.commentId;
+
+  connection.query(
+    "DELETE FROM comments WHERE comment_id = ?",
+    [commentId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ error: "An error occurred while deleting the comment." });
+      } else {
+        res.status(200).json({ message: "Comment deleted successfully." });
+      }
+    }
+  );
+});
+
 // This returns a specific user's collection
 app.get("/user-collections/:user_id", (req, res) => {
   let userId = req.params.user_id;
@@ -245,20 +294,45 @@ app.get("/user-collections/:user_id", (req, res) => {
   });
 });
 
-// This adds a new user rating to the ratings table in the database
+// Check if a rating from the same rater to the same ratee already exists
 app.post("/ratecollection", (req, res) => {
-  let { raterId, rateeId, ratingValue } = req.body;
-  let insertRating = `
-  INSERT INTO ratings (rater_id, ratee_id, rating_value)
-  VALUES (?, ?, ?)`;
-  connection.query(
-    insertRating,
-    [raterId, rateeId, ratingValue],
-    (err, data) => {
-      if (err) throw err;
-      res.json({ success: true });
+  const { raterId, rateeId, ratingValue } = req.body;
+
+  // Check if a rating from the same rater to the same ratee already exists
+  const query = "SELECT * FROM ratings WHERE rater_id = ? AND ratee_id = ?";
+  connection.query(query, [raterId, rateeId], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ message: "Error checking for existing rating" });
     }
-  );
+
+    if (results.length > 0) {
+      // A rating already exists, so don't insert a new one
+      return res
+        .status(409)
+        .json({ message: "You have already rated this collection" });
+    }
+
+    // No existing rating, so insert a new one
+    const insertQuery =
+      "INSERT INTO ratings (rater_id, ratee_id, rating_value) VALUES (?, ?, ?)";
+    connection.query(
+      insertQuery,
+      [raterId, rateeId, ratingValue],
+      (insertError) => {
+        if (insertError) {
+          if (insertError.code !== "ER_DUP_ENTRY") {
+            console.error(insertError);
+          }
+          return res.status(500).json({ message: "Error inserting rating" });
+        }
+
+        res.status(201).json({ message: "Rating inserted successfully" });
+      }
+    );
+  });
 });
 
 // This adds a new comment to the comments table in the database
@@ -320,6 +394,7 @@ app.get("/likedcollections/:user_id", (req, res) => {
   });
 });
 
+// This removes a collection from the liked collections table
 app.post("/remove-from-liked", (req, res) => {
   let liker_user_id = req.body.liker_user_id;
   let owner_user_id = req.body.owner_user_id; // Changed from collection_id
@@ -356,45 +431,55 @@ app.post("/signup", (req, res) => {
   let lastName = req.body.lastName;
   let password = req.body.password;
 
-  // Check if email already in database
-  let checkEmail = `SELECT * FROM user WHERE email = '${email}'`;
-  connection.query(checkEmail, (err, data) => {
+  // Hash the password
+  bcrypt.hash(password, saltRounds, function (err, hash) {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: "Error checking email" });
+      return res.status(500).json({ message: "Error hashing password" });
     }
 
-    if (data.length > 0) {
-      // User with this email already exists
-      return res.status(400).json({ message: "Email already in use" });
-    }
+    password = hash;
 
-    // Check if username already in database
-    let checkUsername = `SELECT * FROM user WHERE username = '${username}'`;
-    connection.query(checkUsername, (err, data) => {
+    // Check if email already in database
+    let checkEmail = `SELECT * FROM user WHERE email = '${email}'`;
+    connection.query(checkEmail, (err, data) => {
       if (err) {
         console.error(err);
-        return res.status(500).json({ message: "Error checking username" });
+        return res.status(500).json({ message: "Error checking email" });
       }
 
       if (data.length > 0) {
-        // User with this username already exists
-        return res.status(400).json({ message: "Username already in use" });
+        // User with this email already exists
+        return res.status(400).json({ message: "Email already in use" });
       }
 
-      // If email and username do not exist, create new user
-      let addUser = `INSERT INTO user (email, username, first_name, last_name, password, role) 
-                             VALUES('${email}', '${username}', '${firstName}', '${lastName}', '${password}', "user"); `;
-      connection.query(addUser, (err, data) => {
+      // Check if username already in database
+      let checkUsername = `SELECT * FROM user WHERE username = '${username}'`;
+      connection.query(checkUsername, (err, data) => {
         if (err) {
-          res.status(500).json({ err });
-          throw err;
+          console.error(err);
+          return res.status(500).json({ message: "Error checking username" });
         }
 
-        if (data) {
-          // Return a success status
-          res.status(200).end();
+        if (data.length > 0) {
+          // User with this username already exists
+          return res.status(400).json({ message: "Username already in use" });
         }
+
+        // If email and username do not exist, create new user
+        let addUser = `INSERT INTO user (email, username, first_name, last_name, password, role) 
+                               VALUES('${email}', '${username}', '${firstName}', '${lastName}', '${password}', "user"); `;
+        connection.query(addUser, (err, data) => {
+          if (err) {
+            res.status(500).json({ err });
+            throw err;
+          }
+
+          if (data) {
+            // Return a success status
+            res.status(200).end();
+          }
+        });
       });
     });
   });
@@ -405,7 +490,7 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
 
-  let checkUser = `SELECT * FROM user WHERE email = '${email}' AND password = '${password}'`;
+  let checkUser = `SELECT * FROM user WHERE email = '${email}'`;
 
   connection.query(checkUser, (err, data) => {
     if (err) {
@@ -413,16 +498,22 @@ app.post("/login", (req, res) => {
       res.redirect("/login"); // Redirect to login page on error
     } else {
       if (data.length > 0) {
-        req.session.user = {
-          ...data[0],
-        };
-        console.log(req.session.user);
-        req.session.save((err) => {
-          if (err) {
-            console.error(err);
-            res.redirect("/login"); // Redirect to login page on error
+        bcrypt.compare(password, data[0].password, function (err, result) {
+          if (result == true) {
+            req.session.user = {
+              ...data[0],
+            };
+            console.log(req.session.user);
+            req.session.save((err) => {
+              if (err) {
+                console.error(err);
+                res.redirect("/login"); // Redirect to login page on error
+              } else {
+                res.status(200).json({ user: req.session.user }); // Redirect to viewsets page on successful login
+              }
+            });
           } else {
-            res.status(200).json({ user: req.session.user }); // Redirect to viewsets page on successful login
+            res.redirect("http://localhost:3000/login"); // Redirect back to login page if login fails
           }
         });
       } else {
@@ -455,25 +546,52 @@ app.get("/user/:userId", (req, res) => {
 // allows a user to update their details in the database
 app.post("/user/:userId", (req, res) => {
   let userId = req.params.userId;
-  let { email, username, first_name, last_name, password } = req.body;
+  let { email, username, first_name, last_name, old_password, new_password } =
+    req.body;
 
-  let updateUser = `UPDATE user SET email = ?, username = ?, first_name = ?, last_name = ?, password = ? WHERE user_id = ?`;
+  // Fetch the user's current password hash from the database
+  let getUser = `SELECT password FROM user WHERE user_id = ?`;
+  connection.query(getUser, [userId], (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error fetching user details" });
+    } else {
+      if (data.length > 0) {
+        let currentPasswordHash = data[0].password;
 
-  connection.query(
-    updateUser,
-    [email, username, first_name, last_name, password, userId],
-    (err, data) => {
-      if (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error updating user details" });
+        // Compare the old password to the stored hash
+        bcrypt.compare(old_password, currentPasswordHash, (err, result) => {
+          if (result) {
+            // If the old password is correct, hash the new password and store it
+            bcrypt.hash(new_password, 10, (err, hash) => {
+              let updateUser = `UPDATE user SET email = ?, username = ?, first_name = ?, last_name = ?, password = ? WHERE user_id = ?`;
+              connection.query(
+                updateUser,
+                [email, username, first_name, last_name, hash, userId],
+                (err, data) => {
+                  if (err) {
+                    console.error(err);
+                    res
+                      .status(500)
+                      .json({ message: "Error updating password" });
+                  } else {
+                    res.json({ message: "User details updated successfully" });
+                  }
+                }
+              );
+            });
+          } else {
+            res.status(401).json({ message: "Incorrect old password" });
+          }
+        });
       } else {
-        res.json({ message: "User details updated successfully" });
+        res.status(404).json({ message: "User not found" });
       }
     }
-  );
+  });
 });
 
-// This allows a user to add a card to the card table of the database, lock off to admin if used
+// This allows a user to add a card to the card table of the database, lock off to admin if used (made at start of project, based off lab)
 app.post("/app/add", (req, res) => {
   let name = req.body.nameField;
   let img = req.body.imgField;

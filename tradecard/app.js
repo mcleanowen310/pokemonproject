@@ -54,10 +54,18 @@ app.post("/login", (req, res) => {
         };
         res.redirect("/viewsets");
       } else {
+        req.session.message = {
+          type: "danger",
+          text: "Please check email and password and try again.",
+        };
         res.redirect("/login");
       }
     })
     .catch((error) => {
+      req.session.message = {
+        type: "danger",
+        text: "Please check email and password and try again.",
+      };
       res.redirect("/login");
     });
 });
@@ -173,7 +181,11 @@ app.post("/edituserinfo", (req, res) => {
   let ep = `http://localhost:4000/user/${userId}`;
 
   axios
-    .post(ep, req.body)
+    .post(ep, {
+      ...req.body,
+      old_password: req.body.old_password,
+      new_password: req.body.new_password,
+    })
     .then((response) => {
       // If update is successful, redirect to user info page
       if (response.status === 200) {
@@ -348,12 +360,18 @@ app.get("/viewuserscollection/:user_id", (req, res) => {
           user_id: userId,
         }));
         let viewedUser = userRes.data; // get the viewed user's details
+
+        // Get the message from the session and clear it
+        const message = req.session.message;
+        req.session.message = null;
+
         res.render("viewuserscollection", {
           titletext: "User Collection",
           userCollectionData,
           user: req.session.user,
           viewedUserId: userId, // pass the viewed user's id to the EJS file
           viewedUser, // pass the viewed user's details to the EJS file
+          message: message, // pass the session message to the EJS file
         });
       })
     )
@@ -362,7 +380,6 @@ app.get("/viewuserscollection/:user_id", (req, res) => {
       res.status(500).json({ message: "Error fetching user's collection" });
     });
 });
-
 // A route to like a user's collection
 app.post("/likecollection/:ownerUserId", (req, res) => {
   if (!req.session.user) {
@@ -380,8 +397,7 @@ app.post("/likecollection/:ownerUserId", (req, res) => {
       res.redirect(`/viewuserscollection/${ownerUserId}`);
     })
     .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: "Error liking collection" });
+      res.redirect(`/viewuserscollection/${ownerUserId}`);
     });
 });
 
@@ -400,11 +416,17 @@ app.post("/ratecollection/:user_id", (req, res) => {
   axios
     .post(ep, { raterId, rateeId, ratingValue })
     .then((response) => {
+      req.session.message = "Thanks for leaving a rating!";
       res.redirect(`/viewuserscollection/${rateeId}`);
     })
     .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: "Error rating collection" });
+      if (err.response && err.response.status === 409) {
+        // The API returned a 409 status, which means a rating already exists
+        req.session.message = "You have already rated this collection";
+      } else {
+        req.session.message = "Error rating collection";
+      }
+      res.redirect(`/viewuserscollection/${rateeId}`);
     });
 });
 

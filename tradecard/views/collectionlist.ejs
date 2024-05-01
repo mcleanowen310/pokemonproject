@@ -12,47 +12,7 @@
     <link rel="stylesheet" type="text/css" href="/collectionlist.css" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="/">Pokémon Central</a>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/collectionlist">My Collection</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/usercollections">User Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/likedcollections">Liked Collections</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/userinfo">User Info</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/viewsets">Cards</a>
-        </li>
-      </ul>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          <% if (user) { %>
-          <li class="nav-item">
-            <span class="navbar-text mr-2">
-              Signed in as : <%= user.first_name %> <%= user.last_name %>
-            </span>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-primary" onclick="logout()">Log Out</button>
-          </li>
-          <% } else { %>
-          <li class="nav-item">
-            <a class="btn btn-primary" href="/login">Log In</a>
-          </li>
-          <% } %>
-          <li class="nav-item">
-            <a class="btn btn-primary ml-2" href="/signup">Sign Up</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <%- include('navbar') %>
 
     <div class="container">
       <div class="header">
@@ -127,20 +87,26 @@
     <% }); %>
 
     <script>
+      // allows a user to remove from their collection
+      let user_id = "<%- user && user.id %>";
       document
         .querySelectorAll(".remove-from-collection-button")
         .forEach((button) => {
           button.addEventListener("click", function () {
-            fetch("http://localhost:4000/remove-from-collection", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                user_id: "<%- user && user.id %>",
-                card_id: this.dataset.cardId,
-              }),
-            })
+            fetch(
+              `http://localhost:4000/remove-from-collection/${user_id}/${this.dataset.cardId}`,
+              {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                  user_id: "<%- user && user.id %>",
+                  card_id: this.dataset.cardId,
+                }),
+              }
+            )
               .then((response) => response.json())
               .then((data) => {
                 if (data.success) {
@@ -156,6 +122,28 @@
               });
           });
         });
+
+      // allows a user to remove a comment
+      document.querySelectorAll(".remove-comment-button").forEach((button) => {
+        button.addEventListener("click", function () {
+          fetch(`http://localhost:4000/comments/${this.dataset.commentId}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.message === "Comment deleted successfully.") {
+                alert("Comment removed successfully");
+                // Optionally, remove the comment from the page
+                this.closest(".comment-box").remove();
+              } else {
+                alert("Failed to remove comment");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        });
+      });
 
       function logout() {
         fetch("/logout", {

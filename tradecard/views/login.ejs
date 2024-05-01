@@ -18,7 +18,9 @@
       <div class="mx-auto">
         <h1 class="display-4 font-weight-bold"><%= titletext %></h1>
         <% if (message) { %>
-        <div class="alert alert-success" role="alert"><%= message %></div>
+        <div class="alert alert-<%= message.type %>" role="alert">
+          <%= message.text %>
+        </div>
         <% } %>
         <form class="py-3 mx-auto text-width" action="/login" method="POST">
           <div class="form-group">
