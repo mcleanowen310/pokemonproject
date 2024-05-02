@@ -31,16 +31,19 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
+//landing screen
+app.get("/tradecard", (req, res) => {
   res.render("home", { titletext: "Welcome to Pokémon Central" });
 });
 
+//login view
 app.get("/login", (req, res) => {
   let message = req.session.message;
   req.session.message = null; // Clear the message after displaying it
   res.render("login", { titletext: "Log In", message: message });
 });
 
+// route to handle the login form submission
 app.post("/login", (req, res) => {
   axios
     .post("http://localhost:4000/login", req.body)
@@ -70,6 +73,7 @@ app.post("/login", (req, res) => {
     });
 });
 
+// route to handle the logout
 app.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -81,10 +85,12 @@ app.post("/logout", (req, res) => {
   });
 });
 
+// getting the signup page
 app.get("/signup", (req, res) => {
   res.render("signup", { titletext: "Sign Up" });
 });
 
+// route to handle the signup form submission
 app.post("/signup", (req, res) => {
   axios
     .post("http://localhost:4000/signup", req.body)
@@ -212,8 +218,9 @@ app.post("/edituserinfo", (req, res) => {
     });
 });
 
+// the viewsets route to display the sets
 app.get("/viewsets", (req, res) => {
-  //console.log(req.session.user); // Add this line
+  //console.log(req.session.user);
   let ep = "http://localhost:4000/sets";
   axios.get(ep).then((response) => {
     let setdata = response.data;
@@ -227,6 +234,7 @@ app.get("/viewsets", (req, res) => {
   });
 });
 
+// the viewcards route to display the cards
 app.get("/viewcards", (req, res) => {
   let ep = "http://localhost:4000/app";
   axios.get(ep).then((response) => {
@@ -254,6 +262,7 @@ app.get("/viewcards", (req, res) => {
   });
 });
 
+// the singlecard route to display a single card
 app.get("/singlecard", (req, res) => {
   let item_id = req.query.item;
   let endp = `http://localhost:4000/app/${item_id}`;
@@ -284,6 +293,7 @@ app.get("/singlecard", (req, res) => {
   });
 });
 
+// the collection route to display the collection of the user
 app.get("/collectionlist", (req, res) => {
   if (!req.session.user || !req.session.user.id) {
     return res.redirect("/signup");
@@ -319,6 +329,7 @@ app.get("/collectionlist", (req, res) => {
     });
 });
 
+// a route to view other users collections
 app.get("/usercollections", (req, res) => {
   if (!req.session.user || !req.session.user.id) {
     return res.redirect("/signup");
